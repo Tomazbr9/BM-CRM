@@ -8,6 +8,7 @@ import com.tomazbr9.buildprice.budget.application.exception.CompositionNotAvaila
 import com.tomazbr9.buildprice.budget.application.mapper.BudgetItemResultMapper;
 import com.tomazbr9.buildprice.budget.application.port.in.AddSinapiBudgetItemUseCase;
 import com.tomazbr9.buildprice.budget.application.port.out.*;
+import com.tomazbr9.buildprice.budget.application.service.BudgetAccessService;
 import com.tomazbr9.buildprice.budget.domain.entity.Budget;
 import com.tomazbr9.buildprice.budget.domain.entity.BudgetGroup;
 import com.tomazbr9.buildprice.budget.domain.entity.BudgetItem;
@@ -27,6 +28,7 @@ public class AddSinapiBudgetItemUseCaseImpl
     private final ProjectGateway projectGateway;
     private final SinapiCatalogGateway sinapiCatalogGateway;
     private final CurrentUserProvider currentUserProvider;
+    private BudgetAccessService budgetAccessService;
 
     public AddSinapiBudgetItemUseCaseImpl(
             BudgetGroupRepository budgetGroupRepository,
@@ -34,7 +36,8 @@ public class AddSinapiBudgetItemUseCaseImpl
             BudgetItemRepository budgetItemRepository,
             ProjectGateway projectGateway,
             SinapiCatalogGateway sinapiCatalogGateway,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            BudgetAccessService budgetAccessService
     ) {
         this.budgetGroupRepository = budgetGroupRepository;
         this.budgetRepository = budgetRepository;
@@ -42,6 +45,7 @@ public class AddSinapiBudgetItemUseCaseImpl
         this.projectGateway = projectGateway;
         this.sinapiCatalogGateway = sinapiCatalogGateway;
         this.currentUserProvider = currentUserProvider;
+        this.budgetAccessService = budgetAccessService;
     }
 
     @Override
@@ -50,34 +54,17 @@ public class AddSinapiBudgetItemUseCaseImpl
             AddSinapiBudgetItemCommand command
     ) {
 
-        UUID userId =
-                currentUserProvider.getCurrentUserId();
-
-        BudgetGroup group =
-                budgetGroupRepository
-                        .findById(command.budgetGroupId())
-                        .orElseThrow(
-                                BudgetGroupNotFoundException::new
+        BudgetAccessService.BudgetGroupAccess access =
+                budgetAccessService
+                        .getBudgetGroupForCurrentUser(
+                                command.budgetGroupId()
                         );
 
         Budget budget =
-                budgetRepository
-                        .findById(group.getBudgetId())
-                        .orElseThrow(
-                                BudgetNotFoundException::new
-                        );
+                access.budget();
 
-        boolean belongsToUser =
-                projectGateway
-                        .findById(budget.getProjectId())
-                        .filter(project ->
-                                project.userId().equals(userId)
-                        )
-                        .isPresent();
-
-        if (!belongsToUser) {
-            throw new BudgetGroupNotFoundException();
-        }
+        BudgetGroup group =
+                access.group();
 
         SinapiCatalogGateway.CompositionData composition =
                 sinapiCatalogGateway

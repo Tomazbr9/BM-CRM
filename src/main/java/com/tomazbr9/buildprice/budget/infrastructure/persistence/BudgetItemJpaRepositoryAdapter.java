@@ -7,6 +7,7 @@ import com.tomazbr9.buildprice.budget.infrastructure.mapper.BudgetItemMapper;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,5 +66,23 @@ public class BudgetItemJpaRepositoryAdapter
     @Override
     public void deleteById(UUID id) {
         repository.deleteById(id);
+    }
+
+    @Override
+    public List<BudgetItem> findByBudgetGroupIds(
+            Collection<UUID> budgetGroupIds
+    ) {
+
+        if (budgetGroupIds == null || budgetGroupIds.isEmpty()) {
+            return List.of();
+        }
+
+        return repository
+                .findByBudgetGroupIdIn(
+                        budgetGroupIds
+                )
+                .stream()
+                .map(BudgetItemMapper::toDomain)
+                .toList();
     }
 }

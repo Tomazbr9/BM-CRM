@@ -7,6 +7,7 @@ import com.tomazbr9.buildprice.budget.application.exception.BudgetNotFoundExcept
 import com.tomazbr9.buildprice.budget.application.mapper.BudgetItemResultMapper;
 import com.tomazbr9.buildprice.budget.application.port.in.AddManualBudgetItemUseCase;
 import com.tomazbr9.buildprice.budget.application.port.out.*;
+import com.tomazbr9.buildprice.budget.application.service.BudgetAccessService;
 import com.tomazbr9.buildprice.budget.domain.entity.Budget;
 import com.tomazbr9.buildprice.budget.domain.entity.BudgetGroup;
 import com.tomazbr9.buildprice.budget.domain.entity.BudgetItem;
@@ -27,6 +28,7 @@ public class AddManualBudgetItemUseCaseImpl
     private final BudgetItemRepository budgetItemRepository;
     private final ProjectGateway projectGateway;
     private final CurrentUserProvider currentUserProvider;
+    private final BudgetAccessService budgetAccessService;
 
     public AddManualBudgetItemUseCaseImpl(
             BudgetGroupRepository budgetGroupRepository,
@@ -34,7 +36,8 @@ public class AddManualBudgetItemUseCaseImpl
             ManualItemRepository manualItemRepository,
             BudgetItemRepository budgetItemRepository,
             ProjectGateway projectGateway,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            BudgetAccessService budgetAccessService
     ) {
         this.budgetGroupRepository = budgetGroupRepository;
         this.budgetRepository = budgetRepository;
@@ -42,6 +45,7 @@ public class AddManualBudgetItemUseCaseImpl
         this.budgetItemRepository = budgetItemRepository;
         this.projectGateway = projectGateway;
         this.currentUserProvider = currentUserProvider;
+        this.budgetAccessService = budgetAccessService;
     }
 
     @Override
@@ -50,34 +54,18 @@ public class AddManualBudgetItemUseCaseImpl
             AddManualBudgetItemCommand command
     ) {
 
-        UUID userId =
-                currentUserProvider.getCurrentUserId();
-
-        BudgetGroup group =
-                budgetGroupRepository
-                        .findById(command.budgetGroupId())
-                        .orElseThrow(
-                                BudgetGroupNotFoundException::new
+        BudgetAccessService.BudgetGroupAccess access =
+                budgetAccessService
+                        .getBudgetGroupForCurrentUser(
+                                command.budgetGroupId()
                         );
 
         Budget budget =
-                budgetRepository
-                        .findById(group.getBudgetId())
-                        .orElseThrow(
-                                BudgetNotFoundException::new
-                        );
+                access.budget();
 
-        boolean belongsToUser =
-                projectGateway
-                        .findById(budget.getProjectId())
-                        .filter(project ->
-                                project.userId().equals(userId)
-                        )
-                        .isPresent();
+        BudgetGroup group =
+                access.group();
 
-        if (!belongsToUser) {
-            throw new BudgetGroupNotFoundException();
-        }
 
         ManualItem manualItem =
                 ManualItem.create(
