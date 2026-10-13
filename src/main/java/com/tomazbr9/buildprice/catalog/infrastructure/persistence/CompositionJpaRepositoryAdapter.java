@@ -15,10 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -161,6 +158,22 @@ public class CompositionJpaRepositoryAdapter
     ) {
         return repository
                 .findAllById(ids)
+                .stream()
+                .map(CompositionMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Composition> findByIds(
+            Collection<UUID> ids
+    ) {
+
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        return repository
+                .findByIdIn(ids)
                 .stream()
                 .map(CompositionMapper::toDomain)
                 .toList();

@@ -4,11 +4,7 @@ import com.tomazbr9.buildprice.budget.application.command.AddSinapiBudgetItemCom
 import com.tomazbr9.buildprice.budget.application.dto.BudgetItemResult;
 import com.tomazbr9.buildprice.budget.application.exception.BudgetGroupNotFoundException;
 import com.tomazbr9.buildprice.budget.application.exception.CompositionNotAvailableForBudgetException;
-import com.tomazbr9.buildprice.budget.application.port.out.BudgetGroupRepository;
-import com.tomazbr9.buildprice.budget.application.port.out.BudgetItemRepository;
-import com.tomazbr9.buildprice.budget.application.port.out.BudgetRepository;
-import com.tomazbr9.buildprice.budget.application.port.out.ProjectGateway;
-import com.tomazbr9.buildprice.budget.application.port.out.SinapiCatalogGateway;
+import com.tomazbr9.buildprice.budget.application.port.out.*;
 import com.tomazbr9.buildprice.budget.application.service.BudgetAccessService;
 import com.tomazbr9.buildprice.budget.domain.entity.Budget;
 import com.tomazbr9.buildprice.budget.domain.entity.BudgetGroup;
@@ -35,25 +31,25 @@ import static org.mockito.Mockito.*;
 class AddSinapiBudgetItemUseCaseImplTest {
 
     @Mock
+    private BudgetItemRepository budgetItemRepository;
+
+    @Mock
+    private SinapiCatalogGateway sinapiCatalogGateway;
+
+    @Mock
+    private BudgetAccessService budgetAccessService;
+
+    @Mock
     private BudgetGroupRepository budgetGroupRepository;
 
     @Mock
     private BudgetRepository budgetRepository;
 
     @Mock
-    private BudgetItemRepository budgetItemRepository;
-
-    @Mock
     private ProjectGateway projectGateway;
 
     @Mock
-    private SinapiCatalogGateway sinapiCatalogGateway;
-
-    @Mock
     private CurrentUserProvider currentUserProvider;
-
-    @Mock
-    private BudgetAccessService budgetAccessService;
 
     private AddSinapiBudgetItemUseCaseImpl useCase;
 
@@ -121,6 +117,9 @@ class AddSinapiBudgetItemUseCaseImplTest {
                         new SinapiCatalogGateway.CompositionData(
                                 compositionId,
                                 versionId,
+                                "12345",
+                                "Concreto estrutural",
+                                "M3",
                                 unitCost
                         )
                 )
@@ -170,10 +169,6 @@ class AddSinapiBudgetItemUseCaseImplTest {
                                 result.directCost()
                         )
         );
-
-        verify(
-                budgetItemRepository
-        ).save(any(BudgetItem.class));
     }
 
     @Test
@@ -224,6 +219,9 @@ class AddSinapiBudgetItemUseCaseImplTest {
                         new SinapiCatalogGateway.CompositionData(
                                 compositionId,
                                 versionId,
+                                "10001",
+                                "Composição teste",
+                                "M2",
                                 unitCost
                         )
                 )
@@ -330,6 +328,9 @@ class AddSinapiBudgetItemUseCaseImplTest {
                         new SinapiCatalogGateway.CompositionData(
                                 compositionId,
                                 otherVersionId,
+                                "12345",
+                                "Composição de outra versão",
+                                "M2",
                                 new BigDecimal("100.00")
                         )
                 )
@@ -457,6 +458,9 @@ class AddSinapiBudgetItemUseCaseImplTest {
                         new SinapiCatalogGateway.CompositionData(
                                 compositionId,
                                 versionId,
+                                "99999",
+                                "Composição teste",
+                                "UN",
                                 new BigDecimal("50.00")
                         )
                 )

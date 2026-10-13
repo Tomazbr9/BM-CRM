@@ -8,8 +8,10 @@ import java.util.UUID;
 public record BudgetStructureItemResult(
         UUID id,
         BudgetItemType type,
-        UUID compositionId,
-        UUID manualItemId,
+        UUID referenceId,
+        String code,
+        String description,
+        String unit,
         BigDecimal quantity,
         BigDecimal unitPrice,
         BigDecimal directCost

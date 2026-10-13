@@ -32,6 +32,9 @@ public class CompositionBudgetQueryImpl
                         new CompositionBudgetView(
                                 composition.getId(),
                                 composition.getSinapiTableVersionId(),
+                                composition.getCode(),
+                                composition.getDescription(),
+                                composition.getUnit(),
                                 composition.getUnitCost()
                         )
                 );

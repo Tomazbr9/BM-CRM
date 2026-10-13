@@ -3,6 +3,7 @@ package com.tomazbr9.buildprice.catalog.application.port.out;
 import com.tomazbr9.buildprice.catalog.application.dto.PageResult;
 import com.tomazbr9.buildprice.catalog.domain.entity.Composition;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,5 +32,9 @@ public interface CompositionRepository {
 
     List<Composition> findAllById(
             Iterable<UUID> ids
+    );
+
+    List<Composition> findByIds(
+            Collection<UUID> ids
     );
 }

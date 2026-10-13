@@ -1,11 +1,14 @@
 package com.tomazbr9.buildprice.budget.infrastructure.gateway;
 
 import com.tomazbr9.buildprice.budget.application.port.out.SinapiCatalogGateway;
+import com.tomazbr9.buildprice.catalog.api.CompositionBudgetBatchQuery;
 import com.tomazbr9.buildprice.catalog.api.CompositionBudgetQuery;
 import com.tomazbr9.buildprice.catalog.api.SinapiTableVersionExistsQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,6 +19,7 @@ public class SinapiCatalogGatewayAdapter
 
     private final SinapiTableVersionExistsQuery versionQuery;
     private final CompositionBudgetQuery compositionQuery;
+    private final CompositionBudgetBatchQuery compositionBatchQuery;
 
     @Override
     public boolean versionExists(UUID versionId) {
@@ -32,8 +36,32 @@ public class SinapiCatalogGatewayAdapter
                         new CompositionData(
                                 composition.id(),
                                 composition.sinapiTableVersionId(),
+                                composition.code(),
+                                composition.description(),
+                                composition.unit(),
                                 composition.unitCost()
                         )
                 );
+    }
+
+    @Override
+    public List<CompositionData> findCompositionsByIds(
+            Collection<UUID> compositionIds
+    ) {
+
+        return compositionBatchQuery
+                .findByIds(compositionIds)
+                .stream()
+                .map(composition ->
+                        new CompositionData(
+                                composition.id(),
+                                composition.sinapiTableVersionId(),
+                                composition.code(),
+                                composition.description(),
+                                composition.unit(),
+                                composition.unitCost()
+                        )
+                )
+                .toList();
     }
 }

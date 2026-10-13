@@ -13,6 +13,9 @@ public interface CompositionBudgetQuery {
     record CompositionBudgetView(
             UUID id,
             UUID sinapiTableVersionId,
+            String code,
+            String description,
+            String unit,
             BigDecimal unitCost
     ) {
     }

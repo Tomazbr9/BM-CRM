@@ -8,6 +8,8 @@ import com.tomazbr9.buildprice.budget.infrastructure.persistence.ManualItemJpaRe
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,5 +54,21 @@ public class ManualItemJpaRepositoryAdapter
     @Override
     public void deleteById(UUID id) {
         repository.deleteById(id);
+    }
+
+    @Override
+    public List<ManualItem> findByIds(
+            Collection<UUID> ids
+    ) {
+
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        return repository
+                .findByIdIn(ids)
+                .stream()
+                .map(ManualItemMapper::toDomain)
+                .toList();
     }
 }

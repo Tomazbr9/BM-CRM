@@ -12,6 +12,9 @@ public record BudgetStructureResult(
         UUID sinapiTableVersionId,
         BudgetStatus status,
         BigDecimal bdiPercentage,
+        BigDecimal directCost,
+        BigDecimal bdiValue,
+        BigDecimal finalPrice,
         List<BudgetStructureGroupResult> groups
 ) {
 }
