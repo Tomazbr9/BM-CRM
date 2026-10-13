@@ -19,20 +19,17 @@ public class BudgetAccessService {
     private final BudgetGroupRepository budgetGroupRepository;
     private final ProjectGateway projectGateway;
     private final CurrentUserProvider currentUserProvider;
-    private final BudgetAccessService budgetAccessService;
 
     public BudgetAccessService(
             BudgetRepository budgetRepository,
             BudgetGroupRepository budgetGroupRepository,
             ProjectGateway projectGateway,
-            CurrentUserProvider currentUserProvider,
-            BudgetAccessService budgetAccessService
+            CurrentUserProvider currentUserProvider
     ) {
         this.budgetRepository = budgetRepository;
         this.budgetGroupRepository = budgetGroupRepository;
         this.projectGateway = projectGateway;
         this.currentUserProvider = currentUserProvider;
-        this.budgetAccessService = budgetAccessService;
     }
 
     public Budget getBudgetForCurrentUser(
