@@ -61,6 +61,14 @@ public class BudgetExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(BudgetItemNotFoundException.class)
+    public ResponseEntity<ApiError> handleBudgetItemNotFound(
+            BudgetItemNotFoundException exception,
+            HttpServletRequest request
+    ){
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI());
+    }
+
     private ResponseEntity<ApiError> buildResponse(
             HttpStatus status,
             String message,

@@ -1,9 +1,6 @@
 package com.tomazbr9.buildprice.budget.presentation.controller;
 
-import com.tomazbr9.buildprice.budget.application.command.AddManualBudgetItemCommand;
-import com.tomazbr9.buildprice.budget.application.command.AddSinapiBudgetItemCommand;
-import com.tomazbr9.buildprice.budget.application.command.CreateBudgetCommand;
-import com.tomazbr9.buildprice.budget.application.command.CreateBudgetGroupCommand;
+import com.tomazbr9.buildprice.budget.application.command.*;
 import com.tomazbr9.buildprice.budget.application.dto.*;
 import com.tomazbr9.buildprice.budget.application.exception.*;
 import com.tomazbr9.buildprice.budget.application.port.in.*;
@@ -32,8 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(BudgetController.class)
@@ -52,6 +48,9 @@ class BudgetControllerTest {
 
     @MockitoBean
     private CreateBudgetUseCase createBudgetUseCase;
+
+    @MockitoBean
+    private UpdateBudgetItemQuantityUseCase updateBudgetItemQuantityUseCase;
 
     @MockitoBean
     private AddManualBudgetItemUseCase addManualBudgetItemUseCase;
@@ -1311,6 +1310,139 @@ class BudgetControllerTest {
                         jsonPath("$.message")
                                 .value("Grupo de orçamento não encontrado")
                 );
+    }
+
+    @Test
+    void shouldUpdateBudgetItemQuantity() throws Exception {
+
+        UUID itemId = UUID.randomUUID();
+        UUID groupId = UUID.randomUUID();
+        UUID compositionId = UUID.randomUUID();
+
+        BudgetItemResult result = new BudgetItemResult(
+                itemId,
+                groupId,
+                BudgetItemType.SINAPI,
+                compositionId,
+                null,
+                new BigDecimal("5.50"),
+                new BigDecimal("100.00"),
+                new BigDecimal("550.00")
+        );
+
+        when(updateBudgetItemQuantityUseCase.execute(
+                any(UpdateBudgetItemQuantityCommand.class)
+        )).thenReturn(result);
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/items/{itemId}/quantity", itemId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "quantity": 5.50
+                                    }
+                                    """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(itemId.toString()))
+                .andExpect(jsonPath("$.budgetGroupId").value(groupId.toString()))
+                .andExpect(jsonPath("$.type").value("SINAPI"))
+                .andExpect(jsonPath("$.quantity").value(5.50))
+                .andExpect(jsonPath("$.unitPriceSnapshot").value(100.00))
+                .andExpect(jsonPath("$.directCost").value(550.00));
+
+        ArgumentCaptor<UpdateBudgetItemQuantityCommand> captor =
+                ArgumentCaptor.forClass(UpdateBudgetItemQuantityCommand.class);
+
+        verify(updateBudgetItemQuantityUseCase).execute(captor.capture());
+
+        UpdateBudgetItemQuantityCommand command = captor.getValue();
+
+        assertEquals(itemId, command.itemId());
+
+        assertEquals(
+                0,
+                new BigDecimal("5.50").compareTo(command.quantity())
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenBudgetItemQuantityIsInvalid()
+            throws Exception {
+
+        UUID itemId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/items/{itemId}/quantity", itemId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "quantity": 0
+                                    }
+                                    """)
+                )
+                .andExpect(status().isBadRequest());
+
+        verify(
+                updateBudgetItemQuantityUseCase,
+                never()
+        ).execute(any());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingMissingBudgetItem()
+            throws Exception {
+
+        UUID itemId = UUID.randomUUID();
+
+        when(updateBudgetItemQuantityUseCase.execute(
+                any(UpdateBudgetItemQuantityCommand.class)
+        )).thenThrow(new BudgetItemNotFoundException());
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/items/{itemId}/quantity", itemId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "quantity": 3
+                                    }
+                                    """)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Orçamento não encontrado"))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/v1/budgets/items/" + itemId + "/quantity"
+                ));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingItemFromInaccessibleBudget()
+            throws Exception {
+
+        UUID itemId = UUID.randomUUID();
+
+        when(updateBudgetItemQuantityUseCase.execute(
+                any(UpdateBudgetItemQuantityCommand.class)
+        )).thenThrow(new BudgetNotFoundException());
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/items/{itemId}/quantity", itemId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "quantity": 3
+                                    }
+                                    """)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Orçamento não encontrado"));
     }
 
 

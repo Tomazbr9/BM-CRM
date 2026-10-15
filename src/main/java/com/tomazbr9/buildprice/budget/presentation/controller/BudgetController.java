@@ -1,18 +1,12 @@
 package com.tomazbr9.buildprice.budget.presentation.controller;
 
-import com.tomazbr9.buildprice.budget.application.command.AddManualBudgetItemCommand;
-import com.tomazbr9.buildprice.budget.application.command.AddSinapiBudgetItemCommand;
-import com.tomazbr9.buildprice.budget.application.command.CreateBudgetCommand;
-import com.tomazbr9.buildprice.budget.application.command.CreateBudgetGroupCommand;
+import com.tomazbr9.buildprice.budget.application.command.*;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetGroupResult;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetItemResult;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetResult;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetStructureResult;
 import com.tomazbr9.buildprice.budget.application.port.in.*;
-import com.tomazbr9.buildprice.budget.presentation.request.AddManualBudgetItemRequest;
-import com.tomazbr9.buildprice.budget.presentation.request.AddSinapiBudgetItemRequest;
-import com.tomazbr9.buildprice.budget.presentation.request.CreateBudgetGroupRequest;
-import com.tomazbr9.buildprice.budget.presentation.request.CreateBudgetRequest;
+import com.tomazbr9.buildprice.budget.presentation.request.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,6 +25,7 @@ public class BudgetController {
     private final CreateBudgetGroupUseCase createBudgetGroupUseCase;
     private final AddSinapiBudgetItemUseCase addSinapiBudgetItemUseCase;
     private final AddManualBudgetItemUseCase addManualBudgetItemUseCase;
+    private final UpdateBudgetItemQuantityUseCase updateBudgetItemQuantityUseCase;
 
     @GetMapping("/{budgetId}")
     public ResponseEntity<BudgetStructureResult> getBudgetStructure(
@@ -128,5 +123,22 @@ public class BudgetController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(result);
+    }
+
+    @PatchMapping("/items/{itemId}/quantity")
+    public ResponseEntity<BudgetItemResult> updateItemQuantity(
+            @PathVariable UUID itemId,
+            @Valid @RequestBody UpdateBudgetItemQuantityRequest request
+    ) {
+        UpdateBudgetItemQuantityCommand command =
+                new UpdateBudgetItemQuantityCommand(
+                        itemId,
+                        request.quantity()
+                );
+
+        BudgetItemResult result =
+                updateBudgetItemQuantityUseCase.execute(command);
+
+        return ResponseEntity.ok(result);
     }
 }
