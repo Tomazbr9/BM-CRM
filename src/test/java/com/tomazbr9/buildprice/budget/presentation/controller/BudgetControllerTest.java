@@ -1,15 +1,12 @@
 package com.tomazbr9.buildprice.budget.presentation.controller;
 
+import com.tomazbr9.buildprice.budget.application.command.AddManualBudgetItemCommand;
+import com.tomazbr9.buildprice.budget.application.command.AddSinapiBudgetItemCommand;
 import com.tomazbr9.buildprice.budget.application.command.CreateBudgetCommand;
 import com.tomazbr9.buildprice.budget.application.command.CreateBudgetGroupCommand;
 import com.tomazbr9.buildprice.budget.application.dto.*;
-import com.tomazbr9.buildprice.budget.application.exception.BudgetNotFoundException;
-import com.tomazbr9.buildprice.budget.application.exception.BudgetProjectNotFoundException;
-import com.tomazbr9.buildprice.budget.application.exception.InvalidParentBudgetGroupException;
-import com.tomazbr9.buildprice.budget.application.exception.SinapiTableVersionNotFoundException;
-import com.tomazbr9.buildprice.budget.application.port.in.CreateBudgetGroupUseCase;
-import com.tomazbr9.buildprice.budget.application.port.in.CreateBudgetUseCase;
-import com.tomazbr9.buildprice.budget.application.port.in.GetBudgetStructureUseCase;
+import com.tomazbr9.buildprice.budget.application.exception.*;
+import com.tomazbr9.buildprice.budget.application.port.in.*;
 import com.tomazbr9.buildprice.budget.domain.enums.BudgetItemType;
 import com.tomazbr9.buildprice.budget.domain.enums.BudgetStatus;
 import com.tomazbr9.buildprice.budget.presentation.exception.BudgetExceptionHandler;
@@ -57,7 +54,13 @@ class BudgetControllerTest {
     private CreateBudgetUseCase createBudgetUseCase;
 
     @MockitoBean
+    private AddManualBudgetItemUseCase addManualBudgetItemUseCase;
+
+    @MockitoBean
     private CreateBudgetGroupUseCase createBudgetGroupUseCase;
+
+    @MockitoBean
+    private AddSinapiBudgetItemUseCase addSinapiBudgetItemUseCase;
 
     @MockitoBean
     private GetBudgetStructureUseCase getBudgetStructureUseCase;
@@ -875,4 +878,440 @@ class BudgetControllerTest {
                                 )
                 );
     }
+
+    @Test
+    void shouldAddSinapiItemToBudgetGroup() throws Exception {
+
+        UUID groupId = UUID.randomUUID();
+        UUID itemId = UUID.randomUUID();
+        UUID compositionId = UUID.randomUUID();
+
+        BudgetItemResult result =
+                new BudgetItemResult(
+                        itemId,
+                        groupId,
+                        BudgetItemType.SINAPI,
+                        compositionId,
+                        null,
+                        new BigDecimal("2.50"),
+                        new BigDecimal("100.00"),
+                        new BigDecimal("250.00")
+                );
+
+        when(
+                addSinapiBudgetItemUseCase.execute(
+                        any(AddSinapiBudgetItemCommand.class)
+                )
+        ).thenReturn(result);
+
+        mockMvc.perform(
+                        post(
+                                "/api/v1/budgets/groups/{groupId}/items/sinapi",
+                                groupId
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "compositionId": "%s",
+                                      "quantity": 2.50
+                                    }
+                                    """.formatted(
+                                        compositionId
+                                ))
+                )
+                .andExpect(
+                        status().isCreated()
+                )
+                .andExpect(
+                        jsonPath("$.id")
+                                .value(itemId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.budgetGroupId")
+                                .value(groupId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.type")
+                                .value("SINAPI")
+                )
+                .andExpect(
+                        jsonPath("$.compositionId")
+                                .value(compositionId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.manualItemId")
+                                .isEmpty()
+                )
+                .andExpect(
+                        jsonPath("$.quantity")
+                                .value(2.50)
+                )
+                .andExpect(
+                        jsonPath("$.unitPriceSnapshot")
+                                .value(100.00)
+                )
+                .andExpect(
+                        jsonPath("$.directCost")
+                                .value(250.00)
+                );
+
+        ArgumentCaptor<AddSinapiBudgetItemCommand> captor =
+                ArgumentCaptor.forClass(
+                        AddSinapiBudgetItemCommand.class
+                );
+
+        verify(
+                addSinapiBudgetItemUseCase
+        ).execute(captor.capture());
+
+        AddSinapiBudgetItemCommand command =
+                captor.getValue();
+
+        assertEquals(
+                groupId,
+                command.budgetGroupId()
+        );
+
+        assertEquals(
+                compositionId,
+                command.compositionId()
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("2.50")
+                        .compareTo(
+                                command.quantity()
+                        )
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSinapiItemRequestIsInvalid()
+            throws Exception {
+
+        UUID groupId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        post(
+                                "/api/v1/budgets/groups/{groupId}/items/sinapi",
+                                groupId
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "compositionId": null,
+                                      "quantity": 0
+                                    }
+                                    """)
+                )
+                .andExpect(
+                        status().isBadRequest()
+                );
+
+        verify(
+                addSinapiBudgetItemUseCase,
+                never()
+        ).execute(any());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenBudgetGroupDoesNotExistForSinapiItem()
+            throws Exception {
+
+        UUID groupId = UUID.randomUUID();
+        UUID compositionId = UUID.randomUUID();
+
+        when(
+                addSinapiBudgetItemUseCase.execute(
+                        any(AddSinapiBudgetItemCommand.class)
+                )
+        ).thenThrow(
+                new BudgetGroupNotFoundException()
+        );
+
+        mockMvc.perform(
+                        post(
+                                "/api/v1/budgets/groups/{groupId}/items/sinapi",
+                                groupId
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "compositionId": "%s",
+                                      "quantity": 1
+                                    }
+                                    """.formatted(
+                                        compositionId
+                                ))
+                )
+                .andExpect(
+                        status().isNotFound()
+                )
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(404)
+                )
+                .andExpect(
+                        jsonPath("$.error")
+                                .value("Not Found")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("Grupo de orçamento não encontrado")
+                );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenCompositionIsNotAvailableForBudget()
+            throws Exception {
+
+        UUID groupId = UUID.randomUUID();
+        UUID compositionId = UUID.randomUUID();
+
+        when(
+                addSinapiBudgetItemUseCase.execute(
+                        any(AddSinapiBudgetItemCommand.class)
+                )
+        ).thenThrow(
+                new CompositionNotAvailableForBudgetException()
+        );
+
+        mockMvc.perform(
+                        post(
+                                "/api/v1/budgets/groups/{groupId}/items/sinapi",
+                                groupId
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "compositionId": "%s",
+                                      "quantity": 1
+                                    }
+                                    """.formatted(
+                                        compositionId
+                                ))
+                )
+                .andExpect(
+                        status().isBadRequest()
+                )
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(400)
+                )
+                .andExpect(
+                        jsonPath("$.error")
+                                .value("Bad Request")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "A composição não está disponível para este orçamento."
+                                )
+                );
+    }
+
+    @Test
+    void shouldAddManualItemToBudgetGroup() throws Exception {
+
+        UUID groupId = UUID.randomUUID();
+        UUID itemId = UUID.randomUUID();
+        UUID manualItemId = UUID.randomUUID();
+
+        BudgetItemResult result =
+                new BudgetItemResult(
+                        itemId,
+                        groupId,
+                        BudgetItemType.MANUAL,
+                        null,
+                        manualItemId,
+                        new BigDecimal("2.00"),
+                        new BigDecimal("150.00"),
+                        new BigDecimal("300.00")
+                );
+
+        when(
+                addManualBudgetItemUseCase.execute(
+                        any(AddManualBudgetItemCommand.class)
+                )
+        ).thenReturn(result);
+
+        mockMvc.perform(
+                        post(
+                                "/api/v1/budgets/groups/{groupId}/items/manual",
+                                groupId
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "description": "Transporte especial de material",
+                                      "unit": "UN",
+                                      "unitPrice": 150.00,
+                                      "quantity": 2
+                                    }
+                                    """)
+                )
+                .andExpect(status().isCreated())
+                .andExpect(
+                        jsonPath("$.id")
+                                .value(itemId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.budgetGroupId")
+                                .value(groupId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.type")
+                                .value("MANUAL")
+                )
+                .andExpect(
+                        jsonPath("$.compositionId")
+                                .isEmpty()
+                )
+                .andExpect(
+                        jsonPath("$.manualItemId")
+                                .value(manualItemId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.quantity")
+                                .value(2.00)
+                )
+                .andExpect(
+                        jsonPath("$.unitPriceSnapshot")
+                                .value(150.00)
+                )
+                .andExpect(
+                        jsonPath("$.directCost")
+                                .value(300.00)
+                );
+
+        ArgumentCaptor<AddManualBudgetItemCommand> captor =
+                ArgumentCaptor.forClass(
+                        AddManualBudgetItemCommand.class
+                );
+
+        verify(
+                addManualBudgetItemUseCase
+        ).execute(captor.capture());
+
+        AddManualBudgetItemCommand command =
+                captor.getValue();
+
+        assertEquals(
+                groupId,
+                command.budgetGroupId()
+        );
+
+        assertEquals(
+                "Transporte especial de material",
+                command.description()
+        );
+
+        assertEquals(
+                "UN",
+                command.unit()
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("150.00")
+                        .compareTo(
+                                command.unitPrice()
+                        )
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("2.00")
+                        .compareTo(
+                                command.quantity()
+                        )
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenManualItemRequestIsInvalid()
+            throws Exception {
+
+        UUID groupId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        post(
+                                "/api/v1/budgets/groups/{groupId}/items/manual",
+                                groupId
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "description": "",
+                                      "unit": "",
+                                      "unitPrice": -1,
+                                      "quantity": 0
+                                    }
+                                    """)
+                )
+                .andExpect(
+                        status().isBadRequest()
+                );
+
+        verify(
+                addManualBudgetItemUseCase,
+                never()
+        ).execute(any());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenBudgetGroupDoesNotExistForManualItem()
+            throws Exception {
+
+        UUID groupId = UUID.randomUUID();
+
+        when(
+                addManualBudgetItemUseCase.execute(
+                        any(AddManualBudgetItemCommand.class)
+                )
+        ).thenThrow(
+                new BudgetGroupNotFoundException()
+        );
+
+        mockMvc.perform(
+                        post(
+                                "/api/v1/budgets/groups/{groupId}/items/manual",
+                                groupId
+                        )
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "description": "Transporte especial",
+                                      "unit": "UN",
+                                      "unitPrice": 150.00,
+                                      "quantity": 2
+                                    }
+                                    """)
+                )
+                .andExpect(
+                        status().isNotFound()
+                )
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(404)
+                )
+                .andExpect(
+                        jsonPath("$.error")
+                                .value("Not Found")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("Grupo de orçamento não encontrado")
+                );
+    }
+
+
 }

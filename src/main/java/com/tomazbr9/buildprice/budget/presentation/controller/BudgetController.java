@@ -1,13 +1,16 @@
 package com.tomazbr9.buildprice.budget.presentation.controller;
 
+import com.tomazbr9.buildprice.budget.application.command.AddManualBudgetItemCommand;
+import com.tomazbr9.buildprice.budget.application.command.AddSinapiBudgetItemCommand;
 import com.tomazbr9.buildprice.budget.application.command.CreateBudgetCommand;
 import com.tomazbr9.buildprice.budget.application.command.CreateBudgetGroupCommand;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetGroupResult;
+import com.tomazbr9.buildprice.budget.application.dto.BudgetItemResult;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetResult;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetStructureResult;
-import com.tomazbr9.buildprice.budget.application.port.in.CreateBudgetGroupUseCase;
-import com.tomazbr9.buildprice.budget.application.port.in.CreateBudgetUseCase;
-import com.tomazbr9.buildprice.budget.application.port.in.GetBudgetStructureUseCase;
+import com.tomazbr9.buildprice.budget.application.port.in.*;
+import com.tomazbr9.buildprice.budget.presentation.request.AddManualBudgetItemRequest;
+import com.tomazbr9.buildprice.budget.presentation.request.AddSinapiBudgetItemRequest;
 import com.tomazbr9.buildprice.budget.presentation.request.CreateBudgetGroupRequest;
 import com.tomazbr9.buildprice.budget.presentation.request.CreateBudgetRequest;
 import jakarta.validation.Valid;
@@ -26,6 +29,8 @@ public class BudgetController {
     private final GetBudgetStructureUseCase getBudgetStructureUseCase;
     private final CreateBudgetUseCase createBudgetUseCase;
     private final CreateBudgetGroupUseCase createBudgetGroupUseCase;
+    private final AddSinapiBudgetItemUseCase addSinapiBudgetItemUseCase;
+    private final AddManualBudgetItemUseCase addManualBudgetItemUseCase;
 
     @GetMapping("/{budgetId}")
     public ResponseEntity<BudgetStructureResult> getBudgetStructure(
@@ -75,6 +80,50 @@ public class BudgetController {
 
         BudgetGroupResult result =
                 createBudgetGroupUseCase.execute(command);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(result);
+    }
+
+    @PostMapping("/groups/{groupId}/items/sinapi")
+    public ResponseEntity<BudgetItemResult> addSinapiItem(
+            @PathVariable UUID groupId,
+            @Valid @RequestBody AddSinapiBudgetItemRequest request
+    ) {
+
+        AddSinapiBudgetItemCommand command =
+                new AddSinapiBudgetItemCommand(
+                        groupId,
+                        request.compositionId(),
+                        request.quantity()
+                );
+
+        BudgetItemResult result =
+                addSinapiBudgetItemUseCase.execute(command);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(result);
+    }
+
+    @PostMapping("/groups/{groupId}/items/manual")
+    public ResponseEntity<BudgetItemResult> addManualItem(
+            @PathVariable UUID groupId,
+            @Valid @RequestBody AddManualBudgetItemRequest request
+    ) {
+
+        AddManualBudgetItemCommand command =
+                new AddManualBudgetItemCommand(
+                        groupId,
+                        request.description(),
+                        request.unit(),
+                        request.unitPrice(),
+                        request.quantity()
+                );
+
+        BudgetItemResult result =
+                addManualBudgetItemUseCase.execute(command);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
