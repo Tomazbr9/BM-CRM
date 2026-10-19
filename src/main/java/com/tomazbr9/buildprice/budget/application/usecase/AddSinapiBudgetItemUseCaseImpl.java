@@ -60,6 +60,8 @@ public class AddSinapiBudgetItemUseCaseImpl
                                 command.budgetGroupId()
                         );
 
+        access.budget().ensureEditable();
+
         Budget budget =
                 access.budget();
 

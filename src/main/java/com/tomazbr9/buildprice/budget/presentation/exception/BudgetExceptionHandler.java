@@ -1,6 +1,8 @@
 package com.tomazbr9.buildprice.budget.presentation.exception;
 
 import com.tomazbr9.buildprice.budget.application.exception.*;
+import com.tomazbr9.buildprice.budget.domain.exception.BudgetNotEditableException;
+import com.tomazbr9.buildprice.budget.domain.exception.InvalidBudgetStatusTransitionException;
 import com.tomazbr9.buildprice.shared.exception.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -59,6 +61,22 @@ public class BudgetExceptionHandler {
             HttpServletRequest request
     ){
         return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(BudgetNotEditableException.class)
+    public ResponseEntity<ApiError> handleBudgetNotEditable(
+            BudgetNotEditableException exception,
+            HttpServletRequest request
+    ){
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidBudgetStatusTransitionException.class)
+    public ResponseEntity<ApiError> handleInvalidBudgetStatusTransition(
+            InvalidBudgetStatusTransitionException exception,
+            HttpServletRequest request
+    ){
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(BudgetItemNotFoundException.class)

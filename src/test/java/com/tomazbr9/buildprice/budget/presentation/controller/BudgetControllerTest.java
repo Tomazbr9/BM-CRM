@@ -6,10 +6,13 @@ import com.tomazbr9.buildprice.budget.application.exception.*;
 import com.tomazbr9.buildprice.budget.application.port.in.*;
 import com.tomazbr9.buildprice.budget.domain.enums.BudgetItemType;
 import com.tomazbr9.buildprice.budget.domain.enums.BudgetStatus;
+import com.tomazbr9.buildprice.budget.domain.exception.InvalidBudgetStatusTransitionException;
 import com.tomazbr9.buildprice.budget.presentation.exception.BudgetExceptionHandler;
 import com.tomazbr9.buildprice.identity.infrastructure.security.JwtAuthenticationFilter;
 import com.tomazbr9.buildprice.identity.infrastructure.security.JwtService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -24,10 +27,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -48,6 +49,18 @@ class BudgetControllerTest {
 
     @MockitoBean
     private CreateBudgetUseCase createBudgetUseCase;
+
+    @MockitoBean
+    private UpdateBudgetBdiUseCase updateBudgetBdiUseCase;
+
+    @MockitoBean
+    private CompleteBudgetUseCase completeBudgetUseCase;
+
+    @MockitoBean
+    private ReopenBudgetUseCase reopenBudgetUseCase;
+
+    @MockitoBean
+    private DeleteBudgetItemUseCase deleteBudgetItemUseCase;
 
     @MockitoBean
     private UpdateBudgetItemQuantityUseCase updateBudgetItemQuantityUseCase;
@@ -1443,6 +1456,251 @@ class BudgetControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Orçamento não encontrado"));
+    }
+
+    @Test
+    void shouldDeleteBudgetItem() throws Exception {
+
+        UUID itemId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        delete("/api/v1/budgets/items/{itemId}", itemId)
+                                .with(csrf())
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        verify(deleteBudgetItemUseCase)
+                .execute(itemId);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeletingMissingBudgetItem()
+            throws Exception {
+
+        UUID itemId = UUID.randomUUID();
+
+        doThrow(new BudgetItemNotFoundException())
+                .when(deleteBudgetItemUseCase)
+                .execute(itemId);
+
+        mockMvc.perform(
+                        delete("/api/v1/budgets/items/{itemId}", itemId)
+                                .with(csrf())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Orçamento não encontrado"))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/v1/budgets/items/" + itemId
+                ));
+    }
+
+    @Test
+    void shouldUpdateBudgetBdi() throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID versionId = UUID.randomUUID();
+
+        BudgetResult result = new BudgetResult(
+                budgetId,
+                projectId,
+                versionId,
+                BudgetStatus.DRAFT,
+                new BigDecimal("25.50")
+        );
+
+        when(updateBudgetBdiUseCase.execute(
+                any(UpdateBudgetBdiCommand.class)
+        )).thenReturn(result);
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/{budgetId}/bdi", budgetId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "bdiPercentage": 25.50
+                                    }
+                                    """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(budgetId.toString()))
+                .andExpect(jsonPath("$.projectId").value(projectId.toString()))
+                .andExpect(jsonPath("$.sinapiTableVersionId").value(versionId.toString()))
+                .andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.bdiPercentage").value(25.50));
+
+        ArgumentCaptor<UpdateBudgetBdiCommand> captor =
+                ArgumentCaptor.forClass(UpdateBudgetBdiCommand.class);
+
+        verify(updateBudgetBdiUseCase).execute(captor.capture());
+
+        UpdateBudgetBdiCommand command = captor.getValue();
+
+        assertEquals(budgetId, command.budgetId());
+
+        assertEquals(
+                0,
+                new BigDecimal("25.50").compareTo(command.bdiPercentage())
+        );
+    }
+
+    @Test
+    void shouldAllowZeroBdi() throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+
+        BudgetResult result = new BudgetResult(
+                budgetId,
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                BudgetStatus.DRAFT,
+                BigDecimal.ZERO
+        );
+
+        when(updateBudgetBdiUseCase.execute(
+                any(UpdateBudgetBdiCommand.class)
+        )).thenReturn(result);
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/{budgetId}/bdi", budgetId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "bdiPercentage": 0
+                                    }
+                                    """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bdiPercentage").value(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"bdiPercentage\": -1}",
+            "{\"bdiPercentage\": null}",
+            "{\"bdiPercentage\": 10.12345}"
+    })
+    void shouldReturnBadRequestWhenBdiIsInvalid(String body)
+            throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/{budgetId}/bdi", budgetId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(updateBudgetBdiUseCase);
+    }
+
+    @Test
+    void shouldCompleteBudget() throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID versionId = UUID.randomUUID();
+
+        BudgetResult result = new BudgetResult(
+                budgetId,
+                projectId,
+                versionId,
+                BudgetStatus.COMPLETED,
+                new BigDecimal("25.50")
+        );
+
+        when(completeBudgetUseCase.execute(budgetId))
+                .thenReturn(result);
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/{budgetId}/complete", budgetId)
+                                .with(csrf())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(budgetId.toString()))
+                .andExpect(jsonPath("$.projectId").value(projectId.toString()))
+                .andExpect(jsonPath("$.sinapiTableVersionId").value(versionId.toString()))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.bdiPercentage").value(25.50));
+
+        verify(completeBudgetUseCase).execute(budgetId);
+        verifyNoInteractions(reopenBudgetUseCase);
+    }
+
+    @Test
+    void shouldReopenBudget() throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+
+        BudgetResult result = new BudgetResult(
+                budgetId,
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                BudgetStatus.DRAFT,
+                new BigDecimal("25.50")
+        );
+
+        when(reopenBudgetUseCase.execute(budgetId))
+                .thenReturn(result);
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/{budgetId}/reopen", budgetId)
+                                .with(csrf())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(budgetId.toString()))
+                .andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.bdiPercentage").value(25.50));
+
+        verify(reopenBudgetUseCase).execute(budgetId);
+        verifyNoInteractions(completeBudgetUseCase);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"complete", "reopen"})
+    void shouldReturnConflictForInvalidBudgetStatusTransition(
+            String action
+    ) throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+
+        String message;
+
+        if (action.equals("complete")) {
+            message = "Only draft budgets can be completed";
+
+            when(completeBudgetUseCase.execute(budgetId))
+                    .thenThrow(
+                            new InvalidBudgetStatusTransitionException(message)
+                    );
+        } else {
+            message = "Only completed budgets can be reopened";
+
+            when(reopenBudgetUseCase.execute(budgetId))
+                    .thenThrow(
+                            new InvalidBudgetStatusTransitionException(message)
+                    );
+        }
+
+        mockMvc.perform(
+                        patch("/api/v1/budgets/{budgetId}/{action}",
+                                budgetId, action)
+                                .with(csrf())
+                )
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value(message))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/v1/budgets/" + budgetId + "/" + action
+                ));
     }
 
 

@@ -2,11 +2,14 @@ package com.tomazbr9.buildprice.budget.application.usecase;
 
 import com.tomazbr9.buildprice.budget.application.command.CreateBudgetGroupCommand;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetGroupResult;
+import com.tomazbr9.buildprice.budget.application.exception.BudgetNotFoundException;
 import com.tomazbr9.buildprice.budget.application.exception.InvalidParentBudgetGroupException;
 import com.tomazbr9.buildprice.budget.application.mapper.BudgetGroupResultMapper;
 import com.tomazbr9.buildprice.budget.application.port.in.CreateBudgetGroupUseCase;
 import com.tomazbr9.buildprice.budget.application.port.out.BudgetGroupRepository;
+import com.tomazbr9.buildprice.budget.application.port.out.BudgetRepository;
 import com.tomazbr9.buildprice.budget.application.service.BudgetAccessService;
+import com.tomazbr9.buildprice.budget.domain.entity.Budget;
 import com.tomazbr9.buildprice.budget.domain.entity.BudgetGroup;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,13 +20,16 @@ public class CreateBudgetGroupUseCaseImpl
 
     private final BudgetGroupRepository budgetGroupRepository;
     private final BudgetAccessService budgetAccessService;
+    private final BudgetRepository budgetRepository;
 
     public CreateBudgetGroupUseCaseImpl(
             BudgetGroupRepository budgetGroupRepository,
-            BudgetAccessService budgetAccessService
+            BudgetAccessService budgetAccessService,
+            BudgetRepository budgetRepository
     ) {
         this.budgetGroupRepository = budgetGroupRepository;
         this.budgetAccessService = budgetAccessService;
+        this.budgetRepository = budgetRepository;
     }
 
     @Override
@@ -31,6 +37,9 @@ public class CreateBudgetGroupUseCaseImpl
     public BudgetGroupResult execute(
             CreateBudgetGroupCommand command
     ) {
+
+        Budget budget = budgetRepository.findById(command.budgetId()).orElseThrow(BudgetNotFoundException::new);
+        budget.ensureEditable();
 
         budgetAccessService.getBudgetForCurrentUser(
                 command.budgetId()

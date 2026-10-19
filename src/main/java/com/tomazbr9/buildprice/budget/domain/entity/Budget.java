@@ -1,6 +1,8 @@
 package com.tomazbr9.buildprice.budget.domain.entity;
 
+import com.tomazbr9.buildprice.budget.domain.exception.BudgetNotEditableException;
 import com.tomazbr9.buildprice.budget.domain.enums.BudgetStatus;
+import com.tomazbr9.buildprice.budget.domain.exception.InvalidBudgetStatusTransitionException;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -61,6 +63,19 @@ public class Budget {
     public void updateBdiPercentage(
             BigDecimal bdiPercentage
     ) {
+
+        if (bdiPercentage == null) {
+            throw new IllegalArgumentException(
+                    "BDI percentage is required"
+            );
+        }
+
+        if (bdiPercentage.signum() < 0) {
+            throw new IllegalArgumentException(
+                    "BDI percentage cannot be negative"
+            );
+        }
+
         this.bdiPercentage =
                 validateBdiPercentage(
                         bdiPercentage
@@ -68,11 +83,29 @@ public class Budget {
     }
 
     public void complete() {
+        if (status != BudgetStatus.DRAFT) {
+            throw new InvalidBudgetStatusTransitionException(
+                    "Only draft budgets can be completed"
+            );
+        }
+
         this.status = BudgetStatus.COMPLETED;
     }
 
     public void reopen() {
+        if (status != BudgetStatus.COMPLETED) {
+            throw new InvalidBudgetStatusTransitionException(
+                    "Only completed budgets can be reopened"
+            );
+        }
+
         this.status = BudgetStatus.DRAFT;
+    }
+
+    public void ensureEditable() {
+        if (status != BudgetStatus.DRAFT) {
+            throw new BudgetNotEditableException();
+        }
     }
 
     private static UUID validateId(UUID id) {

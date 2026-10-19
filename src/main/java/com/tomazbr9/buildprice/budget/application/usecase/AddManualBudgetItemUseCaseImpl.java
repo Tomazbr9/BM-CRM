@@ -60,6 +60,8 @@ public class AddManualBudgetItemUseCaseImpl
                                 command.budgetGroupId()
                         );
 
+        access.budget().ensureEditable();
+
         Budget budget =
                 access.budget();
 

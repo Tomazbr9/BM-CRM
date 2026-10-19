@@ -5,6 +5,7 @@ import com.tomazbr9.buildprice.budget.application.dto.BudgetGroupResult;
 import com.tomazbr9.buildprice.budget.application.exception.BudgetNotFoundException;
 import com.tomazbr9.buildprice.budget.application.exception.InvalidParentBudgetGroupException;
 import com.tomazbr9.buildprice.budget.application.port.out.BudgetGroupRepository;
+import com.tomazbr9.buildprice.budget.application.port.out.BudgetRepository;
 import com.tomazbr9.buildprice.budget.application.service.BudgetAccessService;
 import com.tomazbr9.buildprice.budget.domain.entity.Budget;
 import com.tomazbr9.buildprice.budget.domain.entity.BudgetGroup;
@@ -33,13 +34,17 @@ class CreateBudgetGroupUseCaseImplTest {
     @Mock
     private BudgetAccessService budgetAccessService;
 
+    @Mock
+    private BudgetRepository budgetRepository;
+
     private CreateBudgetGroupUseCaseImpl useCase;
 
     @BeforeEach
     void setUp() {
         useCase = new CreateBudgetGroupUseCaseImpl(
                 budgetGroupRepository,
-                budgetAccessService
+                budgetAccessService,
+                budgetRepository
         );
     }
 

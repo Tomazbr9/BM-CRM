@@ -26,6 +26,10 @@ public class BudgetController {
     private final AddSinapiBudgetItemUseCase addSinapiBudgetItemUseCase;
     private final AddManualBudgetItemUseCase addManualBudgetItemUseCase;
     private final UpdateBudgetItemQuantityUseCase updateBudgetItemQuantityUseCase;
+    private final DeleteBudgetItemUseCase deleteBudgetItemUseCase;
+    private final UpdateBudgetBdiUseCase updateBudgetBdiUseCase;
+    private final CompleteBudgetUseCase completeBudgetUseCase;
+    private final ReopenBudgetUseCase reopenBudgetUseCase;
 
     @GetMapping("/{budgetId}")
     public ResponseEntity<BudgetStructureResult> getBudgetStructure(
@@ -138,6 +142,50 @@ public class BudgetController {
 
         BudgetItemResult result =
                 updateBudgetItemQuantityUseCase.execute(command);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/items/{itemId}")
+    public ResponseEntity<Void> deleteItem(
+            @PathVariable UUID itemId
+    ) {
+        deleteBudgetItemUseCase.execute(itemId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{budgetId}/bdi")
+    public ResponseEntity<BudgetResult> updateBdi(
+            @PathVariable UUID budgetId,
+            @Valid @RequestBody UpdateBudgetBdiRequest request
+    ) {
+        UpdateBudgetBdiCommand command =
+                new UpdateBudgetBdiCommand(
+                        budgetId,
+                        request.bdiPercentage()
+                );
+
+        BudgetResult result =
+                updateBudgetBdiUseCase.execute(command);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @PatchMapping("/{budgetId}/complete")
+    public ResponseEntity<BudgetResult> completeBudget(
+            @PathVariable UUID budgetId
+    ) {
+        BudgetResult result = completeBudgetUseCase.execute(budgetId);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @PatchMapping("/{budgetId}/reopen")
+    public ResponseEntity<BudgetResult> reopenBudget(
+            @PathVariable UUID budgetId
+    ) {
+        BudgetResult result = reopenBudgetUseCase.execute(budgetId);
 
         return ResponseEntity.ok(result);
     }
