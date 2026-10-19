@@ -98,7 +98,7 @@ class ReopenBudgetUseCaseImplTest {
                 );
 
         assertEquals(
-                "Only completed budgets can be reopened",
+                "Apenas orçamentos concluídos podem ser reabertos",
                 exception.getMessage()
         );
 

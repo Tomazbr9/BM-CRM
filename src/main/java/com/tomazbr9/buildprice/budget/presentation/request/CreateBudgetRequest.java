@@ -6,10 +6,10 @@ import java.util.UUID;
 
 public record CreateBudgetRequest(
 
-        @NotNull(message = "Project id is required")
+        @NotNull(message = "O ID do projeto é obrigatório")
         UUID projectId,
 
-        @NotNull(message = "SINAPI table version id is required")
+        @NotNull(message = "O ID da versão da tabela SINAPI é obrigatório")
         UUID sinapiTableVersionId
 
 ) {

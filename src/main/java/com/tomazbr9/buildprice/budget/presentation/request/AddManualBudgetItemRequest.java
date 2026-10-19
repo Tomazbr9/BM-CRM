@@ -9,32 +9,32 @@ import java.math.BigDecimal;
 
 public record AddManualBudgetItemRequest(
 
-        @NotBlank(message = "Description is required")
+        @NotBlank(message = "A descrição é obrigatória")
         @Size(
                 max = 255,
-                message = "Description must have at most 255 characters"
+                message = "A descrição deve ter no máximo 255 caracteres"
         )
         String description,
 
-        @NotBlank(message = "Unit is required")
+        @NotBlank(message = "A unidade é obrigatória")
         @Size(
                 max = 50,
-                message = "Unit must have at most 50 characters"
+                message = "A unidade deve ter no máximo 50 caracteres"
         )
         String unit,
 
-        @NotNull(message = "Unit price is required")
+        @NotNull(message = "O preço unitário é obrigatório")
         @DecimalMin(
                 value = "0.0",
                 inclusive = true,
-                message = "Unit price cannot be negative"
+                message = "O preço unitário não pode ser negativo"
         )
         BigDecimal unitPrice,
 
-        @NotNull(message = "Quantity is required")
+        @NotNull(message = "A quantidade é obrigatória")
         @DecimalMin(
                 value = "0.0001",
-                message = "Quantity must be greater than zero"
+                message = "A quantidade deve ser maior que zero"
         )
         BigDecimal quantity
 

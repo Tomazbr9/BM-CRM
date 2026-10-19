@@ -123,7 +123,7 @@ public class BudgetItem {
     private static UUID validateId(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException(
-                    "Budget item id is required"
+                    "O ID do item de orçamento é obrigatório"
             );
         }
 
@@ -135,7 +135,7 @@ public class BudgetItem {
     ) {
         if (budgetGroupId == null) {
             throw new IllegalArgumentException(
-                    "Budget group id is required"
+                    "O ID do grupo de orçamento é obrigatório"
             );
         }
 
@@ -147,7 +147,7 @@ public class BudgetItem {
     ) {
         if (type == null) {
             throw new IllegalArgumentException(
-                    "Budget item type is required"
+                    "O tipo do item de orçamento é obrigatório"
             );
         }
 
@@ -166,7 +166,7 @@ public class BudgetItem {
                     || manualItemId != null) {
 
                 throw new IllegalArgumentException(
-                        "SINAPI item must reference only a composition"
+                        "O item SINAPI deve referenciar apenas uma composição"
                 );
             }
 
@@ -179,7 +179,7 @@ public class BudgetItem {
                     || compositionId != null) {
 
                 throw new IllegalArgumentException(
-                        "Manual item must reference only a manual item"
+                        "O item manual deve referenciar apenas um item manual"
                 );
             }
         }
@@ -190,13 +190,13 @@ public class BudgetItem {
     ) {
         if (quantity == null) {
             throw new IllegalArgumentException(
-                    "Quantity is required"
+                    "A quantidade é obrigatória"
             );
         }
 
         if (quantity.signum() <= 0) {
             throw new IllegalArgumentException(
-                    "Quantity must be greater than zero"
+                    "A quantidade deve ser maior que zero"
             );
         }
 
@@ -208,13 +208,13 @@ public class BudgetItem {
     ) {
         if (unitPriceSnapshot == null) {
             throw new IllegalArgumentException(
-                    "Unit price snapshot is required"
+                    "O preço unitário registrado é obrigatório"
             );
         }
 
         if (unitPriceSnapshot.signum() < 0) {
             throw new IllegalArgumentException(
-                    "Unit price snapshot cannot be negative"
+                    "O preço unitário registrado não pode ser negativo"
             );
         }
 

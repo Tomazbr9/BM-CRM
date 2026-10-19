@@ -92,7 +92,7 @@ class CompleteBudgetUseCaseImplTest {
                 );
 
         assertEquals(
-                "Only draft budgets can be completed",
+                "Apenas orçamentos em rascunho podem ser concluídos",
                 exception.getMessage()
         );
 

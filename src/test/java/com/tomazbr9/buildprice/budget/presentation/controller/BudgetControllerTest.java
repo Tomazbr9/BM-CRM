@@ -501,7 +501,13 @@ class BudgetControllerTest {
                 )
                 .andExpect(
                         status().isBadRequest()
-                );
+                )
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.containsString("projectId: O ID do projeto é obrigatório"),
+                                org.hamcrest.Matchers.containsString("sinapiTableVersionId: O ID da versão da tabela SINAPI é obrigatório")
+                        )
+                ));
 
         verify(
                 createBudgetUseCase,
@@ -1674,14 +1680,14 @@ class BudgetControllerTest {
         String message;
 
         if (action.equals("complete")) {
-            message = "Only draft budgets can be completed";
+            message = "Apenas orçamentos em rascunho podem ser concluídos";
 
             when(completeBudgetUseCase.execute(budgetId))
                     .thenThrow(
                             new InvalidBudgetStatusTransitionException(message)
                     );
         } else {
-            message = "Only completed budgets can be reopened";
+            message = "Apenas orçamentos concluídos podem ser reabertos";
 
             when(reopenBudgetUseCase.execute(budgetId))
                     .thenThrow(

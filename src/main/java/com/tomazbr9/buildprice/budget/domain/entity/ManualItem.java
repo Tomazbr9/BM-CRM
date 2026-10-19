@@ -70,7 +70,7 @@ public class ManualItem {
     private static UUID validateId(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException(
-                    "Manual item id is required"
+                    "O ID do item manual é obrigatório"
             );
         }
 
@@ -80,7 +80,7 @@ public class ManualItem {
     private static UUID validateBudgetId(UUID budgetId) {
         if (budgetId == null) {
             throw new IllegalArgumentException(
-                    "Budget id is required"
+                    "O ID do orçamento é obrigatório"
             );
         }
 
@@ -94,7 +94,7 @@ public class ManualItem {
                 || description.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Description is required"
+                    "A descrição é obrigatória"
             );
         }
 
@@ -106,7 +106,7 @@ public class ManualItem {
     ) {
         if (unit == null || unit.isBlank()) {
             throw new IllegalArgumentException(
-                    "Unit is required"
+                    "A unidade é obrigatória"
             );
         }
 
@@ -118,13 +118,13 @@ public class ManualItem {
     ) {
         if (unitPrice == null) {
             throw new IllegalArgumentException(
-                    "Unit price is required"
+                    "O preço unitário é obrigatório"
             );
         }
 
         if (unitPrice.signum() < 0) {
             throw new IllegalArgumentException(
-                    "Unit price cannot be negative"
+                    "O preço unitário não pode ser negativo"
             );
         }
 

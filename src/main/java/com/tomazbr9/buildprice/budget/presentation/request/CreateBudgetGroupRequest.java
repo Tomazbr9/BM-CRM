@@ -10,16 +10,16 @@ public record CreateBudgetGroupRequest(
 
         UUID parentGroupId,
 
-        @NotBlank(message = "Group name is required")
+        @NotBlank(message = "O nome do grupo é obrigatório")
         @Size(
                 max = 150,
-                message = "Group name must have at most 150 characters"
+                message = "O nome do grupo deve ter no máximo 150 caracteres"
         )
         String name,
 
         @Min(
                 value = 0,
-                message = "Sort order cannot be negative"
+                message = "A ordem de classificação não pode ser negativa"
         )
         Integer sortOrder
 ) {

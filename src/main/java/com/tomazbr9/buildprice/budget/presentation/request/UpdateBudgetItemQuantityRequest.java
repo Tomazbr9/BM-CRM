@@ -7,10 +7,10 @@ import java.math.BigDecimal;
 
 public record UpdateBudgetItemQuantityRequest(
 
-        @NotNull(message = "Quantity is required")
+        @NotNull(message = "A quantidade é obrigatória")
         @DecimalMin(
                 value = "0.0001",
-                message = "Quantity must be greater than zero"
+                message = "A quantidade deve ser maior que zero"
         )
         BigDecimal quantity
 

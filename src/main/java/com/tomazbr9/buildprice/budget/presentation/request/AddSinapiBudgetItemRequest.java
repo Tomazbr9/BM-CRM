@@ -8,13 +8,13 @@ import java.util.UUID;
 
 public record AddSinapiBudgetItemRequest(
 
-        @NotNull(message = "Composition id is required")
+        @NotNull(message = "O ID da composição é obrigatório")
         UUID compositionId,
 
-        @NotNull(message = "Quantity is required")
+        @NotNull(message = "A quantidade é obrigatória")
         @DecimalMin(
                 value = "0.0001",
-                message = "Quantity must be greater than zero"
+                message = "A quantidade deve ser maior que zero"
         )
         BigDecimal quantity
 

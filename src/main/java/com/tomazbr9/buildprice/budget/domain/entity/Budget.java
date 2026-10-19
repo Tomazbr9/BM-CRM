@@ -66,13 +66,13 @@ public class Budget {
 
         if (bdiPercentage == null) {
             throw new IllegalArgumentException(
-                    "BDI percentage is required"
+                    "O percentual de BDI é obrigatório"
             );
         }
 
         if (bdiPercentage.signum() < 0) {
             throw new IllegalArgumentException(
-                    "BDI percentage cannot be negative"
+                    "O percentual de BDI não pode ser negativo"
             );
         }
 
@@ -85,7 +85,7 @@ public class Budget {
     public void complete() {
         if (status != BudgetStatus.DRAFT) {
             throw new InvalidBudgetStatusTransitionException(
-                    "Only draft budgets can be completed"
+                    "Apenas orçamentos em rascunho podem ser concluídos"
             );
         }
 
@@ -95,7 +95,7 @@ public class Budget {
     public void reopen() {
         if (status != BudgetStatus.COMPLETED) {
             throw new InvalidBudgetStatusTransitionException(
-                    "Only completed budgets can be reopened"
+                    "Apenas orçamentos concluídos podem ser reabertos"
             );
         }
 
@@ -138,7 +138,7 @@ public class Budget {
 
         if (sinapiTableVersionId == null) {
             throw new IllegalArgumentException(
-                    "Tabela de versão SINAPI é obrigatório"
+                    "A versão da tabela SINAPI é obrigatória"
             );
         }
 
@@ -151,7 +151,7 @@ public class Budget {
 
         if (status == null) {
             throw new IllegalArgumentException(
-                    "Status do BDI é obrigatorio"
+                    "O status do orçamento é obrigatório"
             );
         }
 

@@ -8,15 +8,15 @@ import java.math.BigDecimal;
 
 public record UpdateBudgetBdiRequest(
 
-        @NotNull(message = "BDI percentage is required")
+        @NotNull(message = "O percentual de BDI é obrigatório")
         @DecimalMin(
                 value = "0.0",
-                message = "BDI percentage cannot be negative"
+                message = "O percentual de BDI não pode ser negativo"
         )
         @Digits(
                 integer = 6,
                 fraction = 4,
-                message = "BDI percentage must have at most 6 integer and 4 decimal digits"
+                message = "O percentual de BDI deve ter no máximo 6 dígitos inteiros e 4 casas decimais"
         )
         BigDecimal bdiPercentage
 

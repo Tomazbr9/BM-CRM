@@ -264,7 +264,7 @@ public class GetBudgetStructureUseCaseImpl
 
         if (composition == null) {
             throw new IllegalStateException(
-                    "Composition referenced by budget item was not found"
+                    "A composição referenciada pelo item de orçamento não foi encontrada"
             );
         }
 
@@ -293,7 +293,7 @@ public class GetBudgetStructureUseCaseImpl
 
         if (manualItem == null) {
             throw new IllegalStateException(
-                    "Manual item referenced by budget item was not found"
+                    "O item manual referenciado pelo item de orçamento não foi encontrado"
             );
         }
 
