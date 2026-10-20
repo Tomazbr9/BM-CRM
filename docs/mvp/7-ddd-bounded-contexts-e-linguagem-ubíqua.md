@@ -680,6 +680,27 @@ Não possui, inicialmente, estado próprio de negócio.
 - `Excel`
 - `CSV`
 
+### Regras de domínio da Curva ABC
+
+O contexto `reports` é proprietário da lógica de cálculo e classificação da Curva ABC.
+
+A classificação utiliza os custos diretos dos itens e os limites acumulados de 80% (A) e 95% (B), sendo os itens restantes classificados como C.
+
+Os itens que ultrapassam um limite permanecem na classe determinada pelo acumulado anterior à inclusão. Empates de custo devem receber a mesma classificação.
+
+Os cálculos devem preservar os snapshots financeiros do orçamento e utilizar `BigDecimal` com `RoundingMode.HALF_EVEN` para os percentuais apresentados.
+
+As regras detalhadas estão documentadas na seção 2.3.7 do levantamento de requisitos.
+
+**Conceitos adicionais da linguagem ubíqua:**
+
+- `AbcCurve`
+- `AbcCurveEntry`
+- `AbcCurveItem`
+- `AbcClassification`
+- `ParticipationPercentage`
+- `AccumulatedPercentage`
+
 ---
 
 # 7.9 Resumo dos Bounded Contexts

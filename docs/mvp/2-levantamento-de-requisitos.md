@@ -154,22 +154,171 @@ Os arquivos exportados em **PDF** e **Excel** devem explicitar claramente a dife
 
 ---
 
-### 2.3.7 Geração da Curva ABC
+# 2.3.7 Geração e Classificação da Curva ABC
 
-Para gerar a Curva ABC, o sistema deve:
+## Objetivo
 
-1. Calcular o custo total de cada item:
+A Curva ABC permite identificar os itens de maior impacto financeiro em um orçamento de obra.
 
-   ```text
-   Custo Total do Item = Preço Unitário × Quantidade
-   ```
+O BuildPrice deverá gerar a Curva ABC utilizando os custos diretos dos itens, ordenados de forma decrescente, calculando sua participação percentual, percentual acumulado e classificação nas categorias A, B ou C.
 
-2. Ordenar todos os itens do orçamento em **ordem decrescente de valor**.
+A funcionalidade pertence ao bounded context `reports`.
 
-3. Calcular o **percentual de participação individual** de cada item em relação ao custo total da obra.
+## RN-ABC-01 — Base de cálculo
 
-4. Calcular o **percentual acumulado** de cada linha em relação ao custo total da obra.
+O cálculo deve considerar todos os itens do orçamento, independentemente de sua origem (`SINAPI` ou `MANUAL`) ou grupo da EAP.
 
+O custo direto de cada item será:
+
+`Custo Direto do Item = Quantidade × Preço Unitário Snapshot`
+
+O custo direto total será:
+
+`Custo Direto Total = Σ Custos Diretos dos Itens`
+
+O BDI global não deverá ser incluído na base de cálculo da Curva ABC.
+
+Os valores utilizados devem respeitar os snapshots armazenados no orçamento, garantindo consistência histórica.
+
+## RN-ABC-02 — Ordenação
+
+Os itens devem ser ordenados pelo custo direto em ordem decrescente.
+
+Quando dois ou mais itens possuírem o mesmo custo direto, o sistema deverá utilizar o identificador `budgetItemId` como critério secundário de ordenação, garantindo resultados determinísticos.
+
+## RN-ABC-03 — Participação percentual
+
+A participação individual será calculada por:
+
+`Participação (%) = (Custo Direto do Item / Custo Direto Total) × 100`
+
+## RN-ABC-04 — Percentual acumulado
+
+O percentual acumulado será calculado por:
+
+`Acumulado (%) = (Custo Acumulado até o Item / Custo Direto Total) × 100`
+
+O sistema deve utilizar os custos monetários reais do orçamento para calcular o percentual acumulado, e não a soma das participações percentuais previamente arredondadas.
+
+## RN-ABC-05 — Classificação A, B e C
+
+Serão adotados os seguintes limites fixos para o MVP:
+
+| Classe | Faixa de referência | Impacto |
+|---|---|---|
+| A | Primeiros 80% do custo acumulado | Alto |
+| B | De 80% até 95% | Intermediário |
+| C | De 95% até 100% | Baixo |
+
+A classificação será determinada pelo percentual acumulado **antes da inclusão do item**, conforme a regra:
+
+- Classe A: acumulado anterior inferior a 80%.
+- Classe B: acumulado anterior maior ou igual a 80% e inferior a 95%.
+- Classe C: acumulado anterior maior ou igual a 95%.
+
+O item que ultrapassar um limite permanecerá na classe correspondente ao acumulado anterior à sua inclusão.
+
+**Exemplo:** se o acumulado anterior for 75% e o próximo item elevar o acumulado para 87%, esse item será classificado como A.
+
+Essa convenção evita dividir o impacto financeiro de um item entre classes diferentes.
+
+## RN-ABC-06 — Itens com custos iguais
+
+Itens com o mesmo custo direto positivo devem pertencer à mesma classe.
+
+Para garantir esse comportamento:
+
+1. Os itens serão organizados em conjuntos de custo igual.
+2. Todos os itens do mesmo conjunto receberão a classificação determinada pelo acumulado anterior ao conjunto.
+3. O custo acumulado será atualizado normalmente após cada item, preservando seus percentuais acumulados individuais.
+4. A classificação de um conjunto não poderá ser dividida entre duas classes.
+
+Dessa forma, empates não gerarão diferenças de classificação decorrentes da ordenação secundária por UUID.
+
+## RN-ABC-07 — Orçamentos vazios e custos zerados
+
+Quando o orçamento não possuir itens:
+
+- Custo total igual a zero.
+- Lista de resultados vazia.
+- Nenhuma classificação gerada.
+
+Quando o custo direto total for zero:
+
+- Participação percentual igual a 0%.
+- Percentual acumulado igual a 0%.
+- Classificação não atribuída.
+
+Itens individuais com custo zero também não receberão classificação A, B ou C, pois não contribuem financeiramente para o orçamento.
+
+A API poderá representar a ausência de classificação como `null`.
+
+## RN-ABC-08 — Precisão e arredondamento
+
+Os cálculos devem utilizar `BigDecimal`.
+
+Percentuais exibidos ou retornados pela API devem possuir duas casas decimais, com `RoundingMode.HALF_EVEN`.
+
+A determinação das classes deve utilizar valores acumulados sem arredondamento percentual intermediário, para evitar classificações incorretas nos limites de 80% e 95%.
+
+É permitido que a soma das participações individuais já arredondadas seja ligeiramente diferente de 100%.
+
+## RN-ABC-09 — Responsabilidade arquitetural
+
+O módulo `reports` será responsável por:
+
+- Recuperar os dados autorizados do orçamento por meio do contrato público de `budget`.
+- Calcular os percentuais e as classificações.
+- Disponibilizar os resultados para o frontend.
+- Utilizar os resultados em relatórios exportados futuramente.
+
+O módulo não poderá:
+
+- Alterar os itens do orçamento.
+- Recalcular custos utilizando versões atuais da SINAPI.
+- Acessar diretamente entidades JPA ou repositórios internos do módulo `budget`.
+- Persistir alterações no orçamento durante a geração da Curva ABC.
+
+## RN-ABC-10 — Estrutura do resultado
+
+Cada item da Curva ABC deverá apresentar:
+
+- Identificador do item (`budgetItemId`).
+- Tipo (`SINAPI` ou `MANUAL`).
+- Código, quando disponível.
+- Descrição.
+- Unidade.
+- Quantidade.
+- Preço unitário.
+- Custo direto.
+- Participação percentual.
+- Percentual acumulado.
+- Classificação (`A`, `B`, `C` ou `null`).
+
+A resposta deverá apresentar também o identificador do orçamento e o custo direto total.
+
+## RN-ABC-11 — Critérios de aceite
+
+A funcionalidade será considerada válida quando:
+
+- Todos os itens de custo positivo forem considerados.
+- A ordenação decrescente estiver correta.
+- Os percentuais individuais e acumulados estiverem corretos.
+- As classes A, B e C respeitarem os limites definidos.
+- O item que ultrapassar um limite permanecer na classe anterior.
+- Itens com custos iguais receberem a mesma classificação.
+- Orçamentos vazios e custos zerados forem tratados corretamente.
+- O arredondamento seguir `HALF_EVEN`.
+- A geração não alterar o orçamento original.
+- Os valores históricos dos snapshots forem preservados.
+
+## Decisão para o MVP
+
+Os limites de 80% e 95% serão fixos no domínio do módulo `reports`.
+
+Não haverá configuração individual desses limites pelo usuário na primeira versão.
+
+Uma futura evolução poderá permitir limites configuráveis, desde que essa alteração seja documentada e acompanhada de testes.
 ---
 
 ### 2.3.8 Isolamento de Itens Próprios
