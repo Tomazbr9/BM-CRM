@@ -36,27 +36,20 @@ public class PdfBudgetExporterAdapter implements BudgetPdfExporter {
     private static final Color HEADER_COLOR =
             new Color(35, 55, 80);
 
-    private final Font titleFont =
-            FontFactory.getFont(
-                    FontFactory.HELVETICA_BOLD, 18
-            );
 
-    private final Font sectionFont =
-            FontFactory.getFont(
-                    FontFactory.HELVETICA_BOLD, 11
-            );
+    private final PdfFontProvider fontProvider;
+    private final Font titleFont;
+    private final Font sectionFont;
+    private final Font regularFont;
+    private final Font headerFont;
 
-    private final Font regularFont =
-            FontFactory.getFont(
-                    FontFactory.HELVETICA, 8
-            );
-
-    private final Font headerFont =
-            FontFactory.getFont(
-                    FontFactory.HELVETICA_BOLD,
-                    8,
-                    Color.WHITE
-            );
+    public PdfBudgetExporterAdapter(PdfFontProvider fonts) {
+        this.titleFont = fonts.bold(18);
+        this.sectionFont = fonts.bold(11);
+        this.regularFont = fonts.regular(8);
+        this.headerFont = fonts.bold(8, Color.WHITE);
+        this.fontProvider = fonts;
+    }
 
     @Override
     public byte[] export(BudgetReportData budget) {
@@ -73,7 +66,18 @@ public class PdfBudgetExporterAdapter implements BudgetPdfExporter {
         );
 
         try {
-            PdfWriter.getInstance(document, output);
+
+            PdfWriter writer = PdfWriter.getInstance(
+                    document,
+                    output
+            );
+
+            writer.setPageEvent(
+                    new BudgetPdfPageEvent(
+                            fontProvider.regularBaseFont()
+                    )
+            );
+
 
             document.addTitle("Orçamento - BuildPrice");
             document.addCreator("BuildPrice");
