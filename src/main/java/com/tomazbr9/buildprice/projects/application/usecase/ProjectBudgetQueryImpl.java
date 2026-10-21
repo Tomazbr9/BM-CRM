@@ -33,7 +33,8 @@ public class ProjectBudgetQueryImpl
                         new ProjectBudgetView(
                                 project.getId(),
                                 project.getUserId(),
-                                project.getBdiPercentage()
+                                project.getBdiPercentage(),
+                                project.getName()
                         )
                 );
     }

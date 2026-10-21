@@ -47,12 +47,7 @@
     * Unidade de medida;
     * Preço unitário.
 * O usuário deve conseguir gerar e visualizar a **Curva ABC** do orçamento.
-* O usuário deve conseguir exportar o orçamento em formatos de planilha de cálculo:
-
-    * Excel (`.xlsx`);
-    * CSV;
-    * Além da exportação em PDF.
-
+* O usuário deve conseguir exportar o orçamento em formato PDF a planilha de cálculo:
 ---
 
 ## 2.2 Requisitos Não Funcionais

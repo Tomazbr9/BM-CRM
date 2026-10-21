@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record BudgetReportData(
         UUID budgetId,
+        String projectName,
         BigDecimal bdiPercentage,
         BigDecimal directCost,
         BigDecimal bdiValue,

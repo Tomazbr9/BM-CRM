@@ -48,6 +48,7 @@ public class BudgetReportGatewayAdapter implements BudgetReportGateway {
 
         return new BudgetReportData(
                 view.budgetId(),
+                view.projectName(),
                 view.bdiPercentage(),
                 view.directCost(),
                 view.bdiValue(),

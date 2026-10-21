@@ -69,6 +69,7 @@ class GetBudgetAbcCurveUseCaseImplTest {
 
         BudgetReportData budget = new BudgetReportData(
                 budgetId,
+                "Residencial Jardim",
                 new BigDecimal("20.00"),
                 new BigDecimal("5500.00"),
                 new BigDecimal("1100.00"),

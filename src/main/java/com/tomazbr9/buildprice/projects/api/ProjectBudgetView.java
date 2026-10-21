@@ -6,6 +6,7 @@ import java.util.UUID;
 public record ProjectBudgetView(
         UUID projectId,
         UUID userId,
-        BigDecimal defaultBdiPercentage
+        BigDecimal defaultBdiPercentage,
+        String name
 ) {
 }
