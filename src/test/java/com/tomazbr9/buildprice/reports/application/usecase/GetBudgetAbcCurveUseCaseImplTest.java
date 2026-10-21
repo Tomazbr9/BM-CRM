@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -70,6 +71,9 @@ class GetBudgetAbcCurveUseCaseImplTest {
         BudgetReportData budget = new BudgetReportData(
                 budgetId,
                 "Residencial Jardim",
+                "SP",
+                YearMonth.of(2026, 9),
+                "NOT_EXEMPTED",
                 new BigDecimal("20.00"),
                 new BigDecimal("5500.00"),
                 new BigDecimal("1100.00"),

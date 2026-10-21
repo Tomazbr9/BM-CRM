@@ -22,6 +22,7 @@ import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -95,6 +96,7 @@ public class PdfBudgetExporterAdapter implements BudgetPdfExporter {
         return output.toByteArray();
     }
 
+
     private void addHeader(
             Document document,
             BudgetReportData budget
@@ -110,15 +112,34 @@ public class PdfBudgetExporterAdapter implements BudgetPdfExporter {
 
         document.add(title);
 
+        String referenceMonth = budget.referenceMonth()
+                .format(
+                        DateTimeFormatter.ofPattern(
+                                "MMMM/yyyy",
+                                BRAZIL
+                        )
+                );
+
+        String regime = switch (budget.taxReliefRegime()) {
+            case "EXEMPTED" -> "Desonerado";
+            case "NOT_EXEMPTED" -> "Não desonerado";
+            default -> "Não informado";
+        };
+
         Paragraph identification = new Paragraph(
                 "Projeto: " + budget.projectName()
-                        + "\nOrçamento: " + budget.budgetId(),
+                        + "\nOrçamento: " + budget.budgetId()
+                        + "\nEstado: " + budget.stateAbbreviation()
+                        + "\nReferência SINAPI: " + referenceMonth
+                        + "\nRegime: " + regime,
                 regularFont
         );
 
         identification.setSpacingAfter(18);
+
         document.add(identification);
     }
+
 
     private void addItemsTable(
             Document document,

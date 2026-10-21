@@ -6,6 +6,8 @@ import com.tomazbr9.buildprice.budget.api.BudgetReportView;
 import com.tomazbr9.buildprice.budget.application.dto.BudgetStructureResult;
 import com.tomazbr9.buildprice.budget.application.port.in.GetBudgetStructureUseCase;
 
+import com.tomazbr9.buildprice.catalog.api.SinapiVersionReportQuery;
+import com.tomazbr9.buildprice.catalog.api.SinapiVersionReportView;
 import com.tomazbr9.buildprice.projects.api.ProjectBudgetQuery;
 import com.tomazbr9.buildprice.projects.api.ProjectBudgetView;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +22,7 @@ public class BudgetReportQueryImpl implements BudgetReportQuery {
 
     private final GetBudgetStructureUseCase getBudgetStructureUseCase;
     private final ProjectBudgetQuery projectBudgetQuery;
-
+    private final SinapiVersionReportQuery sinapiVersionReportQuery;
 
     @Override
     public BudgetReportView getByBudgetId(UUID budgetId) {
@@ -33,6 +35,13 @@ public class BudgetReportQueryImpl implements BudgetReportQuery {
                 .orElseThrow(() -> new IllegalStateException(
                         "O projeto vinculado ao orçamento não foi encontrado."
                 ));
+
+        SinapiVersionReportView sinapiVersion =
+                sinapiVersionReportQuery
+                        .findById(structure.sinapiTableVersionId())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "A versão SINAPI vinculada ao orçamento não foi encontrada."
+                        ));
 
         List<BudgetReportView.GroupView> groups =
                 structure.groups().stream()
@@ -56,14 +65,19 @@ public class BudgetReportQueryImpl implements BudgetReportQuery {
                         ))
                         .toList();
 
+
         return new BudgetReportView(
                 structure.budgetId(),
                 project.name(),
+                sinapiVersion.stateAbbreviation(),
+                sinapiVersion.referenceMonth(),
+                sinapiVersion.taxReliefRegime(),
                 structure.bdiPercentage(),
                 structure.directCost(),
                 structure.bdiValue(),
                 structure.finalPrice(),
                 groups
         );
+
     }
 }

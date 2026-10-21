@@ -2,12 +2,16 @@
 package com.tomazbr9.buildprice.reports.application.dto;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
 public record BudgetReportData(
         UUID budgetId,
         String projectName,
+        String stateAbbreviation,
+        YearMonth referenceMonth,
+        String taxReliefRegime,
         BigDecimal bdiPercentage,
         BigDecimal directCost,
         BigDecimal bdiValue,

@@ -7,6 +7,7 @@ import org.openpdf.text.pdf.PdfReader;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +45,9 @@ class PdfBudgetExporterAdapterTest {
         BudgetReportData budget = new BudgetReportData(
                 UUID.randomUUID(),
                 "Residencial Jardim",
+                "SP",
+                YearMonth.of(2026, 9),
+                "NOT_EXEMPTED",
                 new BigDecimal("20.00"),
                 new BigDecimal("1000.00"),
                 new BigDecimal("200.00"),
@@ -76,6 +80,9 @@ class PdfBudgetExporterAdapterTest {
         BudgetReportData budget = new BudgetReportData(
                 UUID.randomUUID(),
                 "Residencial Jardim",
+                "SP",
+                YearMonth.of(2026, 9),
+                "NOT_EXEMPTED",
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,

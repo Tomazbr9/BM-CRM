@@ -1,12 +1,17 @@
+
 package com.tomazbr9.buildprice.budget.api;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
 public record BudgetReportView(
         UUID budgetId,
         String projectName,
+        String stateAbbreviation,
+        YearMonth referenceMonth,
+        String taxReliefRegime,
         BigDecimal bdiPercentage,
         BigDecimal directCost,
         BigDecimal bdiValue,
@@ -20,8 +25,7 @@ public record BudgetReportView(
             String name,
             Integer sortOrder,
             List<ItemView> items
-    ) {
-    }
+    ) {}
 
     public record ItemView(
             UUID id,
@@ -32,6 +36,5 @@ public record BudgetReportView(
             BigDecimal quantity,
             BigDecimal unitPrice,
             BigDecimal directCost
-    ) {
-    }
+    ) {}
 }
