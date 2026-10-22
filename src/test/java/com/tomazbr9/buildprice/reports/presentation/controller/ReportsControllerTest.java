@@ -6,6 +6,7 @@ import com.tomazbr9.buildprice.budget.presentation.exception.BudgetExceptionHand
 import com.tomazbr9.buildprice.identity.infrastructure.security.JwtService;
 import com.tomazbr9.buildprice.reports.application.dto.AbcCurveItemResult;
 import com.tomazbr9.buildprice.reports.application.dto.AbcCurveResult;
+import com.tomazbr9.buildprice.reports.application.port.in.ExportBudgetPdfUseCase;
 import com.tomazbr9.buildprice.reports.application.port.in.GetBudgetAbcCurveUseCase;
 import com.tomazbr9.buildprice.reports.domain.enums.AbcClassification;
 
@@ -13,12 +14,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,6 +40,9 @@ class ReportsControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private ExportBudgetPdfUseCase exportBudgetPdfUseCase;
 
     @MockitoBean
     private GetBudgetAbcCurveUseCase getBudgetAbcCurveUseCase;
@@ -191,6 +198,60 @@ class ReportsControllerTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(getBudgetAbcCurveUseCase);
+    }
+
+
+    @Test
+    void shouldExportBudgetPdf() throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+
+        byte[] pdf = "%PDF-1.7\nmock-pdf"
+                .getBytes(StandardCharsets.US_ASCII);
+
+        when(exportBudgetPdfUseCase.execute(budgetId))
+                .thenReturn(pdf);
+
+        mockMvc.perform(
+                        get(
+                                "/api/v1/reports/budgets/{budgetId}/export/pdf",
+                                budgetId
+                        )
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(
+                        MediaType.APPLICATION_PDF
+                ))
+                .andExpect(header().string(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"orcamento-"
+                                + budgetId + ".pdf\""
+                ))
+                .andExpect(header().longValue(
+                        HttpHeaders.CONTENT_LENGTH,
+                        pdf.length
+                ))
+                .andExpect(content().bytes(pdf));
+
+        verify(exportBudgetPdfUseCase).execute(budgetId);
+    }
+
+
+    @Test
+    @WithAnonymousUser
+    void shouldRejectUnauthenticatedPdfExport() throws Exception {
+
+        UUID budgetId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        get(
+                                "/api/v1/reports/budgets/{budgetId}/export/pdf",
+                                budgetId
+                        )
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(exportBudgetPdfUseCase);
     }
 
 

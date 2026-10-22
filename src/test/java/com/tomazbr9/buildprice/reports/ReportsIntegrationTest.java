@@ -4,9 +4,13 @@ package com.tomazbr9.buildprice.reports;
 import com.tomazbr9.buildprice.shared.security.CurrentUserProvider;
 
 import org.junit.jupiter.api.Test;
+import org.openpdf.text.pdf.PdfReader;
+import org.openpdf.text.pdf.parser.PdfTextExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -15,6 +19,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -24,6 +29,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -183,6 +189,63 @@ class ReportsIntegrationTest {
         assertEquals(before, after);
         assertEquals(1, after);
     }
+
+
+    @Test
+    void shouldExportValidPdfForBudgetOwner() throws Exception {
+
+        when(currentUserProvider.getCurrentUserId())
+                .thenReturn(OWNER_ID);
+
+        MvcResult result = mockMvc.perform(
+                        get(
+                                "/api/v1/reports/budgets/{budgetId}/export/pdf",
+                                BUDGET_ID
+                        )
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(
+                        MediaType.APPLICATION_PDF
+                ))
+                .andExpect(header().string(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"orcamento-"
+                                + BUDGET_ID + ".pdf\""
+                ))
+                .andReturn();
+
+        byte[] pdf = result.getResponse().getContentAsByteArray();
+
+        assertTrue(pdf.length > 100);
+
+        try (PdfReader reader = new PdfReader(pdf)) {
+            assertTrue(reader.getNumberOfPages() >= 1);
+        }
+    }
+
+
+    private String extractPdfText(byte[] pdf) throws Exception {
+
+        try (PdfReader reader = new PdfReader(pdf)) {
+
+            PdfTextExtractor extractor =
+                    new PdfTextExtractor(reader);
+
+            StringBuilder text = new StringBuilder();
+
+            for (int page = 1;
+                 page <= reader.getNumberOfPages();
+                 page++) {
+
+                text.append(extractor.getTextFromPage(page));
+                text.append("\n");
+            }
+
+            return text.toString();
+        }
+    }
+
+
 
     private Integer countBudgetItems() {
         return jdbcTemplate.queryForObject(
