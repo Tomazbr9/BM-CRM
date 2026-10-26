@@ -1,9 +1,9 @@
 spring:
   application:
-    name: buildprice
+    name: bmcrm
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/buildprice-db
+    url: jdbc:postgresql://localhost:5432/bmcrm-db
     username: admin
     password: pass
 
@@ -15,11 +15,6 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-
-  servlet:
-    multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
 
 security:
   refresh-token:

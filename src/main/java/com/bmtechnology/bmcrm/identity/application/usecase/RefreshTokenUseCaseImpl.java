@@ -1,0 +1,87 @@
+package com.bmtechnology.bmcrm.identity.application.usecase;
+
+import com.bmtechnology.bmcrm.identity.application.command.RefreshTokenCommand;
+import com.bmtechnology.bmcrm.identity.application.dto.TokenResult;
+import com.bmtechnology.bmcrm.identity.application.exception.ExpiredRefreshTokenException;
+import com.bmtechnology.bmcrm.identity.application.exception.InvalidRefreshTokenException;
+import com.bmtechnology.bmcrm.identity.application.exception.RevokedRefreshTokenException;
+import com.bmtechnology.bmcrm.identity.application.exception.UserNotFoundException;
+import com.bmtechnology.bmcrm.identity.application.port.in.RefreshTokenUseCase;
+import com.bmtechnology.bmcrm.identity.application.port.out.*;
+import com.bmtechnology.bmcrm.identity.domain.entity.RefreshTokenEntity;
+import com.bmtechnology.bmcrm.identity.domain.entity.UserEntity;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
+@Service
+public class RefreshTokenUseCaseImpl implements RefreshTokenUseCase {
+
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenGenerator refreshTokenGenerator;
+    private final RefreshTokenExpirationProvider refreshTokenExpirationProvider;
+    private final UserRepository userRepository;
+    private final TokenHasher tokenHasher;
+    private final TokenProvider tokenProvider;
+
+    public RefreshTokenUseCaseImpl(
+            RefreshTokenRepository refreshTokenRepository,
+            RefreshTokenGenerator refreshTokenGenerator,
+            RefreshTokenExpirationProvider refreshTokenExpirationProvider,
+            UserRepository userRepository,
+            TokenHasher tokenHasher,
+            TokenProvider tokenProvider
+    ){
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.refreshTokenGenerator = refreshTokenGenerator;
+        this.refreshTokenExpirationProvider = refreshTokenExpirationProvider;
+        this.userRepository = userRepository;
+        this.tokenHasher = tokenHasher;
+        this.tokenProvider = tokenProvider;
+    }
+
+    @Override
+    public TokenResult execute(RefreshTokenCommand command) {
+
+        String tokenHash = tokenHasher.hash(command.refreshToken());
+
+        RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(InvalidRefreshTokenException::new);
+
+        if(refreshTokenEntity.isRevoked()){
+            throw new RevokedRefreshTokenException();
+        }
+
+        if(refreshTokenEntity.isExpired(LocalDateTime.now())){
+            throw new ExpiredRefreshTokenException();
+        }
+
+        UserEntity user = userRepository.findById(refreshTokenEntity.getUserId())
+                .orElseThrow(UserNotFoundException::new);
+
+        String accessToken = tokenProvider.generateAccessToken(
+                user.getEmail().value(),
+                user.getRole().name()
+        );
+
+        refreshTokenEntity.revoke();
+
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        String newRefreshToken = refreshTokenGenerator.generate();
+
+        String newRefreshTokenHash = tokenHasher.hash(newRefreshToken);
+        LocalDateTime newExpiresAt = refreshTokenExpirationProvider.expiresAt();
+
+        RefreshTokenEntity newRefreshTokenEntity = RefreshTokenEntity.create(
+                user.getId(),
+                newRefreshTokenHash,
+                newExpiresAt
+        );
+
+        refreshTokenRepository.save(newRefreshTokenEntity);
+
+        return new TokenResult(accessToken, newRefreshToken);
+    }
+
+}
